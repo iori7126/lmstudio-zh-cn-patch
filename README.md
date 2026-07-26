@@ -19,7 +19,7 @@
 
 在仓库右侧 **Releases** 下载：
 
-`LMStudio中文深度汉化补丁_0.4.20-1_deep1.1.zip`
+`LMStudio-ZH-CN-Patch-0.4.20-deep1.1.zip`
 
 安装步骤：
 
