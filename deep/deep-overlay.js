@@ -1,0 +1,104 @@
+;(() => {
+  const translations = new Map(Object.entries({"- Headless Mode":"- 无界面模式","- Release notes":"- 发行说明","`llmster` - Headless Mode":"`llmster` - 无界面模式","Account":"账户","Signed out":"未登录","AccountSigned out":"账户 未登录","Add device":"添加设备","All types":"所有类型","Always open full model loader panel":"始终打开完整的模型加载面板","Anthropic Compatible Endpoints":"Anthropic 兼容端点","Anthropic-compatible":"Anthropic 兼容","API Changelog":"API 更新日志","Arch":"架构","Architecture":"架构","App home directory":"应用主目录","App Info":"应用信息","App Settings":"应用设置","Appearance":"外观","Authentication":"身份验证","Auto-latch onto generating message":"自动定位到正在生成的消息","Available in preview":"预览版可用","Block":"块状","Bubble":"气泡","Bypass Memory Load Warnings":"忽略内存加载警告","Bypass system checks to force-load models even when resources are insufficient.":"绕过系统检查，即使资源不足也强制加载模型。","Capabilities":"能力","Chat":"聊天","Chat Completions":"聊天补全","Chat history renderer and parser from OpenAI":"来自 OpenAI 的聊天历史渲染器和解析器","Chat messages style":"聊天消息样式","Chat Style":"聊天样式","Chat with a model":"与模型聊天","Check for updates":"检查更新","Clear logs":"清空日志","Clear search":"清除搜索","Clear search results":"清除搜索结果","Close":"关闭","Close modal":"关闭窗口","Close settings":"关闭设置","Community":"社区","Compatible only":"仅兼容版本","Completions (Legacy)":"文本补全（旧版）","Connect to remote instances of LM Studio. Load models on your other machines, and use them locally. End-to-end encrypted.":"连接远程 LM Studio 实例，在其他设备上加载模型并在本机使用。连接采用端到端加密。","Copy":"复制","Copy code":"复制代码","Copy Info":"复制信息","Copy info as JSON":"以 JSON 格式复制信息","CPU-only llama.cpp engine":"仅使用 CPU 的 llama.cpp 引擎","Core":"核心","Create an account to publish projects and join organizations.":"创建账户后可发布项目并加入组织。","Custom value":"自定义值","Default Context Length":"默认上下文长度","Developer":"开发者","Developer Docs":"开发者文档","Developer Logs":"开发者日志","Didn't work?":"没有生效？","Display a confirmation dialog before saving new fields to the preset.":"将新字段保存到预设前显示确认对话框。","Do not show this again":"不再显示","Domain":"领域","Download":"下载","Download a model":"下载模型","Download Options":"下载选项","Downloads":"下载","Embeddings":"嵌入","End-to-end encrypted. Works for local devices, LLM rigs, or cloud VMs.":"端到端加密，支持本地设备、LLM 主机和云端虚拟机。","Engines & Frameworks":"引擎与框架","Font Weight":"字体粗细","Format":"格式","General":"常规","General Settings":"常规设置","Get download status":"获取下载状态","GPU survey unsuccessful":"GPU 检测失败","GPUs":"显卡","Guardrails":"保护机制","Hardware":"硬件","Hello!":"你好！","Hide Logs":"隐藏日志","Hide sidebar":"隐藏侧栏","Hide Sidebar":"隐藏侧栏","Idle TTL and Auto-Evict":"空闲生存时间与自动卸载","Image Input":"图像输入","Installed":"已安装","Integrations":"集成","Introducing LM Link.":"认识一下 LM Link。","Introducing: LM Link":"新功能：LM Link","Introduction":"介绍","Last message only":"仅最后一条消息","Last updated:":"最后更新：","Latest version":"最新版本","Learn how it works":"了解工作原理","Linux Startup Task":"Linux 启动任务","List Models":"列出模型","List your models":"列出你的模型","LLMs":"大语言模型","LM Link is in Preview.":"LM Link 当前处于预览阶段。","LM Link is now on iPhone":"LM Link 现已支持 iPhone","LM Link Sidebar Button Popover":"LM Link 侧栏按钮弹窗","LM Studio API":"LM Studio API","LM Studio REST API":"LM Studio REST API","Load a model":"加载模型","Load Anyway":"仍然加载","Load Model":"加载模型","Load models on remote machines and use them as if they are local.":"在远程设备上加载模型，并像使用本地模型一样使用它们。","Loaded Models":"已加载的模型","Loading options...":"正在加载选项……","Local Server":"本地服务器","Login & Enable LM Link":"登录并启用 LM Link","Made by Element Labs Inc in New York":"由纽约 Element Labs Inc 开发","Manage Tokens":"管理令牌","Markdown":"Markdown","Memory Capacity":"内存容量","Messages":"消息","Model Defaults":"模型默认设置","Model downloads and indexing location":"模型下载和索引位置","Model Loading Guardrails":"模型加载保护机制","Model maximum":"模型允许的最大值","Model Search":"搜索模型","Models":"模型","Models Directory":"模型目录","Models directory options":"模型目录选项","More actions":"更多操作","More from google":"更多 Google 模型","More options":"更多选项","My Models":"我的模型","Name":"名称","Network Devices":"网络设备","Never exceed":"绝不超过","New":"新","NEW":"新","New chat":"新建聊天","New Folder":"新建文件夹","Next":"下一步","No restriction (not recommended)":"不限制（不推荐）","Non Compatible":"不兼容","Nvidia CUDA accelerated llama.cpp engine":"使用 Nvidia CUDA 加速的 llama.cpp 引擎","Normal":"正常","Notifications (F8)":"通知 (F8)","OFF":"关闭","Offline":"离线","ON":"开启","Only loads when manually confirmed with Alt/Option.":"仅在按住 Alt/Option 手动确认后加载。","Open":"打开","Open app logs":"打开应用日志","Open device settings":"打开设备设置","Open downloads pane when starting a new model download":"开始下载新模型时打开下载面板","Open in browser ↗":"在浏览器中打开 ↗","Open in new window":"在新窗口打开","OpenAI Compatible Endpoints":"OpenAI 兼容端点","OpenAI-compatible":"OpenAI 兼容","Overview":"概览","Params":"参数","Preset confirmation":"预设保存确认","Publish to the LM Studio Hub":"发布到 LM Studio Hub","Quickstart":"快速开始","Read the docs about preset publishing":"阅读预设发布文档","Reasoning":"推理","Refresh devices":"刷新设备","Refresh staff picks":"刷新精选模型","Report bug or send feedback":"报告问题或发送反馈","Require Authentication":"要求身份验证","Requires holding Alt/Option":"需要按住 Alt/Option","Reset all":"全部重置","Reset onboarding dialogs":"重置引导对话框","Reset to default":"恢复默认值","Resize images such that the longest edge is no larger than the value above. Proportions are maintained.":"按比例缩放图像，使最长边不超过上面的数值。","Resolving model details":"正在解析模型详情","Resource Monitor":"资源监视器","Responses":"Responses 接口","REST API v0":"REST API v0","Retry":"重试","Route Hugging Face downloads through LM Studio’s proxy for improved reliability and compatibility.":"通过 LM Studio 的 Hugging Face 代理下载，以提高可靠性和兼容性。","Run models from your other devices right on your iPhone and iPad, with end-to-end encrypted connection between them.":"通过端到端加密连接，在 iPhone 和 iPad 上使用其他设备运行的模型。","Running the Server":"运行服务器","Runtime":"运行时","Runtime Selections":"运行时选择","Runtime updates channel":"运行时更新通道","Search":"搜索","Search...":"搜索……","Select a model to view details":"选择模型以查看详情","Serve on Local Network":"在局域网中提供服务","Server not running":"服务器未运行","Server Port":"服务器端口","Server Settings":"服务器设置","Settings":"设置","Show Gen Info":"显示生成信息","Show reasoning block vignette":"显示推理块渐隐效果","Show tab strip scrollbar":"显示标签栏滚动条","Sidebar options":"侧栏选项","Skip the quick picker and open the full model loader instead.":"跳过快速选择器，直接打开完整模型加载器。","Split view":"拆分视图","Staff Pick":"官方精选","Staff picks":"官方精选","Stateful Chats":"有状态聊天","Status:":"状态：","Stopped":"已停止","Streaming events":"流式事件","Structured Output":"结构化输出","System":"系统","Text Embedding":"文本嵌入","This device":"此设备","This dot indicates a config override":"此圆点表示配置已被覆盖","This model is from a verified author":"此模型来自已验证的作者","Toggle server port and options popover":"打开服务器端口和选项","Tool Use":"工具调用","Tools and Function Calling":"工具与函数调用","Tools you allow to run without confirmation will appear here":"允许无需确认即可运行的工具会显示在这里","Unload a model":"卸载模型","Unload model":"卸载模型","Update":"更新","Updates channel":"更新通道","Use LM Studio from other apps or from your code.":"从其他应用或代码中使用 LM Studio。","Use your local models, remotely.":"远程使用你的本地模型。","User Interface":"用户界面","Using MCP via API":"通过 API 使用 MCP","Using with LM Link":"配合 LM Link 使用","Vision":"视觉","View All":"查看全部","Vulkan accelerated llama.cpp engine":"使用 Vulkan 加速的 llama.cpp 引擎","Welcome":"欢迎","Why do I need to log in?":"为什么需要登录？","Allow calling servers from mcp.json":"允许调用 mcp.json 中的服务器","Allow per-request MCPs":"允许每个请求单独指定 MCP","Active API Keys:":"已启用的 API 密钥：","Always allows loading, even if it may cause instability or crashes.":"始终允许加载，即使可能造成不稳定或崩溃。","Press":"按下","L to load a model":"L 加载模型","Scroll message to top on send":"发送时将消息滚动到顶部"}));
+  const excluded = "script,style,noscript,code,pre,textarea,[contenteditable='true']";
+  const attrs = ["aria-label", "title", "placeholder"];
+  const normalize = (value) => value.replace(/\s+/g, " ").trim();
+  const dynamic = (value) => {
+    let match;
+    if ((match = value.match(/^(\d+) days ago$/))) return match[1] + " 天前";
+    if ((match = value.match(/^Show details for (.+)$/))) return "查看 " + match[1] + " 的详细信息";
+    if ((match = value.match(/^Open Staff Pick page for (.+)$/))) return "打开 " + match[1] + " 的精选页面";
+    if ((match = value.match(/^Navigate to step (\d+)$/))) return "转到第 " + match[1] + " 步";
+    if ((match = value.match(/^Download(\d+(?:\.\d+)?\s+(?:GB|MB))$/))) return "下载 " + match[1];
+    if ((match = value.match(/^Update(\d+(?:\.\d+)?\s+(?:GB|MB))$/))) return "更新 " + match[1];
+    if ((match = value.match(/^(\d+(?:\.\d+)*) - Release notes$/))) return match[1] + " - 发行说明";
+    return null;
+  };
+  const translate = (value) => {
+    const normalized = normalize(value);
+    return translations.get(normalized) ?? dynamic(normalized);
+  };
+  const translateText = (node) => {
+    const parent = node.parentElement;
+    if (!parent || parent.closest(excluded)) return;
+    const replacement = translate(node.nodeValue ?? "");
+    if (!replacement) return;
+    const original = node.nodeValue;
+    const leading = original.match(/^\s*/)?.[0] ?? "";
+    const trailing = original.match(/\s*$/)?.[0] ?? "";
+    node.nodeValue = leading + replacement + trailing;
+  };
+  const translateElement = (element) => {
+    if (!(element instanceof Element) || element.closest(excluded)) return;
+    for (const attr of attrs) {
+      if (!element.hasAttribute(attr)) continue;
+      const replacement = translate(element.getAttribute(attr) ?? "");
+      if (replacement) element.setAttribute(attr, replacement);
+    }
+    for (const node of element.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) translateText(node);
+    }
+  };
+  const scan = (root) => {
+    if (root.nodeType === Node.TEXT_NODE) {
+      translateText(root);
+      return;
+    }
+    if (!(root instanceof Element) && root !== document) return;
+    if (root instanceof Element) translateElement(root);
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (node.nodeType === Node.TEXT_NODE) translateText(node);
+      else translateElement(node);
+    }
+  };
+  const start = () => {
+    scan(document);
+    const queued = new Set();
+    let timer = null;
+    const enqueue = (node) => {
+      if (node?.isConnected) queued.add(node);
+      if (timer !== null) return;
+      timer = setTimeout(() => {
+        timer = null;
+        const candidates = [...queued].filter((node) => node.isConnected);
+        queued.clear();
+        const roots = candidates.filter((candidate, index) =>
+          !candidates.some((other, otherIndex) =>
+            index !== otherIndex &&
+            other.nodeType === Node.ELEMENT_NODE &&
+            other.contains(candidate)
+          )
+        );
+        for (const root of roots) scan(root);
+      }, 16);
+    };
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        if (record.type === "characterData" || record.type === "attributes") {
+          enqueue(record.target);
+        }
+        for (const node of record.addedNodes) enqueue(node);
+      }
+    });
+    observer.observe(document.documentElement, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: attrs,
+    });
+    Object.defineProperty(window, "__LMSTUDIO_ZH_DEEP_PATCH__", {
+      value: Object.freeze({ version: "0.4.20-1-deep-1", entries: translations.size }),
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, { once: true });
+  } else {
+    start();
+  }
+})();

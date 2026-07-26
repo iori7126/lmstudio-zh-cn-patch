@@ -1,0 +1,17 @@
+LM Studio Simplified Chinese Deep Localization Patch
+
+This project includes and modifies Simplified Chinese localization data from:
+https://github.com/lmstudio-ai/localization
+
+Upstream audit commit:
+a15da90f9fbc6d714ead1f9bbe8bb8d59868877e
+
+The upstream localization repository is distributed under the Apache License,
+Version 2.0. Its contributors retain their respective copyrights.
+
+This is an unofficial community project. It is not affiliated with, sponsored
+by, or endorsed by LM Studio or Element Labs Inc. LM Studio, LM Link, and
+related names and trademarks belong to their respective owners.
+
+No LM Studio application binary is included in this repository or its release
+assets.
