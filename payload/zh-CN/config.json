@@ -627,5 +627,11 @@
   "llm.load.useUnifiedKvCache/title": "统一 KV 缓存",
   "llm.prediction.reasoning.budgetTokens/subTitle": "思考 Token 预算：关闭表示不限制，0 表示立即结束，N > 0 表示指定 Token 预算",
   "llm.prediction.reasoning.budgetTokens/title": "推理预算",
-  "reasoningBudgetUncheckedHint": "不限制"
+  "reasoningBudgetUncheckedHint": "不限制",
+  "llm.load.mlx.autoFit/title": "自动调整上下文长度",
+  "llm.load.mlx.autoFit/subTitle": "加载时根据可用内存，让 MLX 运行时选择安全的上下文长度",
+  "llm.load.yuzu.autoFit/title": "自动调整上下文长度",
+  "llm.load.yuzu.autoFit/subTitle": "加载时根据可用内存，让运行时选择安全的上下文长度",
+  "llm.load.mlx.diskCache/title": "提示词磁盘缓存",
+  "llm.load.mlx.diskCache/subTitle": "将提示词状态缓存到磁盘，以便在请求之间复用"
 }

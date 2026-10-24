@@ -4,3 +4,8 @@
 *.zip
 .DS_Store
 Thumbs.db
+
+reports/environment.md
+reports/bundle-ui-candidates.tsv
+test-artifacts/
+TASK_LOG.md

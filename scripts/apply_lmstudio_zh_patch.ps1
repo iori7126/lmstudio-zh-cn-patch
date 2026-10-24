@@ -8,40 +8,71 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$ExpectedVersion = '0.4.20+1'
-$ExpectedMainWindowSha256 = '5BEC77399EBD6C5C1B5426F506949C6D3202AAE0F9545B4E0BCCAB56EC7C788B'
-$SafeV2Sha256 = 'D391E601C5E7C5E5C83E8C0D1C90311BC213CFEE0594E9C54C3A9F161A9E0FBA'
-$ExpectedPatchedSha256 = 'A47D4DABEFA207A5699223B9A0BADF2CF9A29664154D8153EB6387BDEA285867'
-$PatchSuffix = '.zh-cn-deep-0.4.20-1.bak'
-$SafeV2BackupSuffix = '.zh-cn-enhanced-0.4.20-1.bak'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$PackagedBaselineRoot = Join-Path $ProjectRoot 'baseline\zh-CN'
-$PackagedPayloadRoot = Join-Path $ProjectRoot 'payload\zh-CN'
-if (
-    [System.IO.Directory]::Exists($PackagedBaselineRoot) -and
-    [System.IO.Directory]::Exists($PackagedPayloadRoot)
-) {
-    $OfficialLocaleRoot = $PackagedBaselineRoot
-    $PayloadRoot = $PackagedPayloadRoot
-} else {
-    $OfficialLocaleRoot = Join-Path $ProjectRoot 'data_in\official-localization\zh-CN'
-    $PayloadRoot = Join-Path $ProjectRoot 'outputs\payload\zh-CN'
+$ProfilesRoot = Join-Path $ProjectRoot 'versions'
+
+function Read-VersionProfiles {
+    $profiles = @(
+        Get-ChildItem -LiteralPath $ProfilesRoot -Filter 'profile.json' -File -Recurse |
+            Sort-Object FullName |
+            ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw -Encoding UTF8 | ConvertFrom-Json }
+    )
+    if ($profiles.Count -eq 0) {
+        throw "No version profiles were found: $ProfilesRoot"
+    }
+    return $profiles
 }
 
 function Resolve-MainWindowPath {
-    param([string]$InputPath)
+    param(
+        [string]$InputPath,
+        [object[]]$Profiles
+    )
 
     $resolved = [System.IO.Path]::GetFullPath($InputPath)
     if ([System.IO.File]::Exists($resolved)) {
-        return $resolved
+        $matches = @($Profiles | Where-Object {
+            $candidate = [System.IO.Path]::Combine(
+                [System.IO.Path]::GetDirectoryName($resolved),
+                $_.mainWindowRelativePath.Replace('\', [System.IO.Path]::DirectorySeparatorChar)
+            )
+            $candidate -eq $resolved
+        })
+        if ($matches.Count -eq 0) {
+            return [pscustomobject]@{ Path = $resolved; AppRoot = $null }
+        }
+        return [pscustomobject]@{ Path = $resolved; AppRoot = $null }
     }
 
-    $candidate = Join-Path $resolved 'resources\app\.webpack\renderer\main_window.js'
-    if ([System.IO.File]::Exists($candidate)) {
-        return $candidate
+    foreach ($profile in $Profiles) {
+        $relative = $profile.mainWindowRelativePath.Replace('\', [System.IO.Path]::DirectorySeparatorChar)
+        $candidate = [System.IO.Path]::Combine($resolved, $relative)
+        if ([System.IO.File]::Exists($candidate)) {
+            return [pscustomobject]@{ Path = $candidate; AppRoot = $resolved }
+        }
     }
 
     throw "main_window.js was not found: $resolved"
+}
+
+function Get-ProfileForHash {
+    param(
+        [object[]]$Profiles,
+        [string]$Hash
+    )
+
+    foreach ($profile in $Profiles) {
+        if ($profile.originalSha256 -and $profile.originalSha256.ToUpperInvariant() -eq $Hash) {
+            return [pscustomobject]@{ Profile = $profile; State = 'original' }
+        }
+        if ($profile.patchedSha256 -and $profile.patchedSha256 -ne 'TO_BE_COMPUTED' -and $profile.patchedSha256.ToUpperInvariant() -eq $Hash) {
+            return [pscustomobject]@{ Profile = $profile; State = 'patched' }
+        }
+        if ($profile.legacyCurrentSha256 -and $profile.legacyCurrentSha256.ToUpperInvariant() -eq $Hash) {
+            return [pscustomobject]@{ Profile = $profile; State = 'legacy' }
+        }
+    }
+    return $null
 }
 
 function Find-ObjectEnd {
@@ -50,17 +81,15 @@ function Find-ObjectEnd {
         [int]$StartIndex
     )
 
-    if ($Text[$StartIndex] -ne '{') {
+    if ($StartIndex -lt 0 -or $StartIndex -ge $Text.Length -or $Text[$StartIndex] -ne '{') {
         throw "Invalid object start index: $StartIndex"
     }
 
     $depth = 0
     $quote = [char]0
     $escaped = $false
-
     for ($index = $StartIndex; $index -lt $Text.Length; $index++) {
         $character = $Text[$index]
-
         if ($quote -ne [char]0) {
             if ($escaped) {
                 $escaped = $false
@@ -75,7 +104,6 @@ function Find-ObjectEnd {
             }
             continue
         }
-
         if ($character -eq '"' -or $character -eq "'") {
             $quote = $character
             continue
@@ -91,12 +119,18 @@ function Find-ObjectEnd {
             }
         }
     }
-
     throw "Could not find the object end after index $StartIndex"
 }
 
-$mainWindowPath = Resolve-MainWindowPath -InputPath $TargetPath
-$backupPath = "$mainWindowPath$PatchSuffix"
+function Get-JsonObjectCompact {
+    param([string]$Path)
+    $object = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
+    return $object | ConvertTo-Json -Compress -Depth 100
+}
+
+$profiles = Read-VersionProfiles
+$targetInfo = Resolve-MainWindowPath -InputPath $TargetPath -Profiles $profiles
+$mainWindowPath = $targetInfo.Path
 
 if (-not $OutputPath) {
     $running = Get-Process -ErrorAction SilentlyContinue |
@@ -106,76 +140,102 @@ if (-not $OutputPath) {
     }
 }
 
+$currentHash = (Get-FileHash -LiteralPath $mainWindowPath -Algorithm SHA256).Hash.ToUpperInvariant()
+$match = Get-ProfileForHash -Profiles $profiles -Hash $currentHash
+
 if ($Restore) {
+    if (-not $match -or $match.State -ne 'patched') {
+        throw "Restore refused. The target is not a recognized patched file. Current main_window.js SHA256=$currentHash"
+    }
+    $profile = $match.Profile
+    $backupPath = "$mainWindowPath$($profile.backupSuffix)"
     if (-not [System.IO.File]::Exists($backupPath)) {
         throw "Backup file was not found: $backupPath"
     }
-    $backupHash = (Get-FileHash -LiteralPath $backupPath -Algorithm SHA256).Hash
-    if ($backupHash -ne $ExpectedMainWindowSha256) {
-        throw "Backup verification failed. Refusing to restore SHA256=$backupHash"
+    $backupHash = (Get-FileHash -LiteralPath $backupPath -Algorithm SHA256).Hash.ToUpperInvariant()
+    if ($backupHash -ne $profile.originalSha256.ToUpperInvariant()) {
+        throw "Backup verification failed for LM Studio $($profile.version). Refusing to restore SHA256=$backupHash"
     }
-    $restoreTempPath = "$mainWindowPath.zh-cn-restore-$PID.tmp"
-    $restoreSwapPath = "$mainWindowPath.zh-cn-restore-swap-$PID.tmp"
-    Copy-Item -LiteralPath $backupPath -Destination $restoreTempPath -Force
+    $restoreTempPath = "$mainWindowPath.$($profile.profileId)-restore-$PID.tmp"
+    $restoreSwapPath = "$mainWindowPath.$($profile.profileId)-restore-swap-$PID.tmp"
+    Copy-Item -LiteralPath $backupPath -Destination $restoreTempPath
     try {
         [System.IO.File]::Replace($restoreTempPath, $mainWindowPath, $restoreSwapPath)
+        $restoredHash = (Get-FileHash -LiteralPath $mainWindowPath -Algorithm SHA256).Hash.ToUpperInvariant()
+        if ($restoredHash -ne $profile.originalSha256.ToUpperInvariant()) {
+            throw "Restore verification failed. SHA256=$restoredHash"
+        }
     } finally {
-        if ([System.IO.File]::Exists($restoreTempPath)) {
-            Remove-Item -LiteralPath $restoreTempPath -Force
-        }
-        if ([System.IO.File]::Exists($restoreSwapPath)) {
-            Remove-Item -LiteralPath $restoreSwapPath -Force
-        }
+        if ([System.IO.File]::Exists($restoreTempPath)) { Remove-Item -LiteralPath $restoreTempPath -Force }
+        if ([System.IO.File]::Exists($restoreSwapPath)) { Remove-Item -LiteralPath $restoreSwapPath -Force }
     }
-    $restoredHash = (Get-FileHash -LiteralPath $mainWindowPath -Algorithm SHA256).Hash
-    Write-Output "Original file restored: $mainWindowPath"
+    Write-Output "Original file restored for LM Studio $($profile.version): $mainWindowPath"
     Write-Output "SHA256=$restoredHash"
     exit 0
 }
 
-$currentHash = (Get-FileHash -LiteralPath $mainWindowPath -Algorithm SHA256).Hash
-$sourceMainWindowPath = $mainWindowPath
-$upgradingFromSafeV2 = $false
-if ($currentHash -eq $SafeV2Sha256) {
-    $safeV2BackupPath = "$mainWindowPath$SafeV2BackupSuffix"
-    if (-not [System.IO.File]::Exists($safeV2BackupPath)) {
-        throw "The safe v2 patch is installed, but its original backup is missing: $safeV2BackupPath"
-    }
-    $safeV2BackupHash = (Get-FileHash -LiteralPath $safeV2BackupPath -Algorithm SHA256).Hash
-    if ($safeV2BackupHash -ne $ExpectedMainWindowSha256) {
-        throw "The safe v2 backup failed verification. Refusing to upgrade. SHA256=$safeV2BackupHash"
-    }
-    $sourceMainWindowPath = $safeV2BackupPath
-    $upgradingFromSafeV2 = $true
-} elseif ($currentHash -ne $ExpectedMainWindowSha256) {
-    throw "Version check failed. This patch only supports LM Studio $ExpectedVersion. Current main_window.js SHA256=$currentHash"
+if (-not $match) {
+    throw "Version check failed. Refusing to modify an unknown main_window.js. Current SHA256=$currentHash"
 }
 
+$profile = $match.Profile
+if ($match.State -eq 'patched') {
+    Write-Output "LM Studio $($profile.version) deep Chinese patch is already installed. No files were changed."
+    Write-Output "SHA256=$currentHash"
+    exit 0
+}
+if ($match.State -eq 'legacy') {
+    if (-not $profile.legacyBackupSuffix -or -not $profile.legacyOriginalSha256) {
+        throw "A legacy patch was detected for LM Studio $($profile.version), but no safe upgrade profile is defined."
+    }
+    $legacyBackupPath = "$mainWindowPath$($profile.legacyBackupSuffix)"
+    if (-not [System.IO.File]::Exists($legacyBackupPath)) {
+        throw "The legacy patch is installed, but its original backup is missing: $legacyBackupPath"
+    }
+    $legacyBackupHash = (Get-FileHash -LiteralPath $legacyBackupPath -Algorithm SHA256).Hash.ToUpperInvariant()
+    if ($legacyBackupHash -ne $profile.legacyOriginalSha256.ToUpperInvariant()) {
+        throw "The legacy backup failed verification. Refusing to upgrade. SHA256=$legacyBackupHash"
+    }
+    $sourceMainWindowPath = $legacyBackupPath
+    $upgradingFromLegacy = $true
+} elseif ($match.State -eq 'original') {
+    $sourceMainWindowPath = $mainWindowPath
+    $upgradingFromLegacy = $false
+} else {
+    throw "Unsupported target state: $($match.State)"
+}
+
+if (-not $profile.patchedSha256 -or $profile.patchedSha256 -eq 'TO_BE_COMPUTED') {
+    throw "Version profile $($profile.version) has no published patched SHA256 yet."
+}
+
+$baselineRoot = Join-Path $ProjectRoot $profile.baselineRoot
+$payloadRoot = Join-Path $ProjectRoot $profile.payloadRoot
+$overlayPath = Join-Path $ProjectRoot $profile.overlayPath
+if (-not [System.IO.Directory]::Exists($baselineRoot)) { throw "Baseline directory is missing: $baselineRoot" }
+if (-not [System.IO.Directory]::Exists($payloadRoot)) { throw "Payload directory is missing: $payloadRoot" }
+if (-not [System.IO.File]::Exists($overlayPath)) { throw "Deep translation overlay is missing: $overlayPath" }
+
 $text = [System.IO.File]::ReadAllText($sourceMainWindowPath, [System.Text.Encoding]::UTF8)
-$payloadFiles = Get-ChildItem -LiteralPath $PayloadRoot -Filter '*.json' -File | Sort-Object Name
+$payloadFiles = @(Get-ChildItem -LiteralPath $payloadRoot -Filter '*.json' -File | Sort-Object Name)
+if ($payloadFiles.Count -eq 0) { throw "No locale payload files were found: $payloadRoot" }
 $patchedNamespaces = New-Object System.Collections.Generic.List[string]
 
 foreach ($payloadFile in $payloadFiles) {
-    $officialPath = Join-Path $OfficialLocaleRoot $payloadFile.Name
+    $officialPath = Join-Path $baselineRoot $payloadFile.Name
     if (-not [System.IO.File]::Exists($officialPath)) {
         throw "Official Chinese baseline is missing: $officialPath"
     }
-
-    $officialObject = Get-Content -LiteralPath $officialPath -Raw -Encoding UTF8 | ConvertFrom-Json
-    $payloadObject = Get-Content -LiteralPath $payloadFile.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
-    $officialCompact = $officialObject | ConvertTo-Json -Compress -Depth 100
-    $payloadCompact = $payloadObject | ConvertTo-Json -Compress -Depth 100
-    # Locale objects are embedded inside a single-quoted JavaScript string
-    # passed to JSON.parse(). Preserve JSON escapes through that outer layer.
+    $officialCompact = Get-JsonObjectCompact -Path $officialPath
+    $payloadCompact = Get-JsonObjectCompact -Path $payloadFile.FullName
     $payloadEmbedded = $payloadCompact.Replace('\', '\\').Replace("'", "\'")
     $payloadEmbedded = $payloadEmbedded.Replace(([char]0x2028).ToString(), '\\u2028')
     $payloadEmbedded = $payloadEmbedded.Replace(([char]0x2029).ToString(), '\\u2029')
     $prefixLength = [Math]::Min(120, $officialCompact.Length)
     $prefix = $officialCompact.Substring(0, $prefixLength)
-
     $startIndex = $text.IndexOf($prefix, [System.StringComparison]::Ordinal)
     if ($startIndex -lt 0) {
-        throw "Could not locate the Chinese locale object for $($payloadFile.Name)"
+        throw "Could not locate the Chinese locale object for $($payloadFile.Name) in LM Studio $($profile.version)"
     }
     $duplicateIndex = $text.IndexOf(
         $prefix,
@@ -185,87 +245,67 @@ foreach ($payloadFile in $payloadFiles) {
     if ($duplicateIndex -ge 0) {
         throw "The Chinese locale object for $($payloadFile.Name) is not unique"
     }
-
     $endIndex = Find-ObjectEnd -Text $text -StartIndex $startIndex
-    $text = $text.Substring(0, $startIndex) +
-        $payloadEmbedded +
-        $text.Substring($endIndex + 1)
+    $text = $text.Substring(0, $startIndex) + $payloadEmbedded + $text.Substring($endIndex + 1)
     $patchedNamespaces.Add($payloadFile.Name)
 }
 
-$deepOverlayPath = Join-Path $ProjectRoot 'deep\deep-overlay.js'
-if (-not [System.IO.File]::Exists($deepOverlayPath)) {
-    throw "Deep translation overlay is missing: $deepOverlayPath"
-}
-$deepOverlay = [System.IO.File]::ReadAllText(
-    $deepOverlayPath,
-    [System.Text.Encoding]::UTF8
-)
+$deepOverlay = [System.IO.File]::ReadAllText($overlayPath, [System.Text.Encoding]::UTF8)
 $text += "`r`n" + $deepOverlay
 
-$destinationPath = if ($OutputPath) {
-    [System.IO.Path]::GetFullPath($OutputPath)
-} else {
-    $mainWindowPath
-}
-
+$destinationPath = if ($OutputPath) { [System.IO.Path]::GetFullPath($OutputPath) } else { $mainWindowPath }
 $destinationDirectory = Split-Path -Parent $destinationPath
 if (-not [System.IO.Directory]::Exists($destinationDirectory)) {
     [System.IO.Directory]::CreateDirectory($destinationDirectory) | Out-Null
 }
-$candidatePath = if ($OutputPath) {
-    $destinationPath
-} else {
-    "$mainWindowPath.zh-cn-candidate-$PID.tmp"
+$candidatePath = if ($OutputPath) { $destinationPath } else { "$mainWindowPath.$($profile.profileId)-candidate-$PID.tmp" }
+[System.IO.File]::WriteAllText($candidatePath, $text, [System.Text.UTF8Encoding]::new($false))
+$patchedHash = (Get-FileHash -LiteralPath $candidatePath -Algorithm SHA256).Hash.ToUpperInvariant()
+if ($patchedHash -ne $profile.patchedSha256.ToUpperInvariant()) {
+    if ([System.IO.File]::Exists($candidatePath)) { Remove-Item -LiteralPath $candidatePath -Force }
+    throw "Patched file verification failed for LM Studio $($profile.version). No installed file was changed. SHA256=$patchedHash"
 }
-[System.IO.File]::WriteAllText(
-    $candidatePath,
-    $text,
-    [System.Text.UTF8Encoding]::new($false)
-)
 
-$patchedHash = (Get-FileHash -LiteralPath $candidatePath -Algorithm SHA256).Hash
-if ($patchedHash -ne $ExpectedPatchedSha256) {
-    if (-not $OutputPath -and [System.IO.File]::Exists($candidatePath)) {
+if ($OutputPath) {
+    Write-Output "Generated verified candidate for LM Studio $($profile.version): $destinationPath"
+    Write-Output "Patched locale namespaces: $($patchedNamespaces -join ', ')"
+    Write-Output "SHA256=$patchedHash"
+    exit 0
+}
+
+$backupPath = "$mainWindowPath$($profile.backupSuffix)"
+if ([System.IO.File]::Exists($backupPath)) {
+    $existingBackupHash = (Get-FileHash -LiteralPath $backupPath -Algorithm SHA256).Hash.ToUpperInvariant()
+    if ($existingBackupHash -ne $profile.originalSha256.ToUpperInvariant()) {
         Remove-Item -LiteralPath $candidatePath -Force
+        throw "Existing backup verification failed for LM Studio $($profile.version). Refusing to continue. SHA256=$existingBackupHash"
     }
-    throw "Patched file verification failed. No installed file was changed. SHA256=$patchedHash"
-}
-
-if (-not $OutputPath) {
-    if ([System.IO.File]::Exists($backupPath)) {
-        $existingBackupHash = (Get-FileHash -LiteralPath $backupPath -Algorithm SHA256).Hash
-        if ($existingBackupHash -ne $ExpectedMainWindowSha256) {
-            Remove-Item -LiteralPath $candidatePath -Force
-            throw "Existing backup verification failed. Refusing to continue. SHA256=$existingBackupHash"
-        }
-    } else {
-        Copy-Item -LiteralPath $sourceMainWindowPath -Destination $backupPath
-    }
-
-    try {
-        $swapPath = "$mainWindowPath.zh-cn-swap-$PID.tmp"
-        [System.IO.File]::Replace($candidatePath, $mainWindowPath, $swapPath)
-        if ([System.IO.File]::Exists($swapPath)) {
-            Remove-Item -LiteralPath $swapPath -Force
-        }
-    } catch {
-        if ([System.IO.File]::Exists($candidatePath)) {
-            Remove-Item -LiteralPath $candidatePath -Force
-        }
-        if ($swapPath -and [System.IO.File]::Exists($swapPath)) {
-            Remove-Item -LiteralPath $swapPath -Force
-        }
-        if ([System.IO.File]::Exists($backupPath)) {
-            Copy-Item -LiteralPath $backupPath -Destination $mainWindowPath -Force
-        }
-        throw
+} else {
+    Copy-Item -LiteralPath $sourceMainWindowPath -Destination $backupPath
+    $newBackupHash = (Get-FileHash -LiteralPath $backupPath -Algorithm SHA256).Hash.ToUpperInvariant()
+    if ($newBackupHash -ne $profile.originalSha256.ToUpperInvariant()) {
+        Remove-Item -LiteralPath $candidatePath -Force
+        Remove-Item -LiteralPath $backupPath -Force
+        throw "New backup verification failed for LM Studio $($profile.version). SHA256=$newBackupHash"
     }
 }
 
+$swapPath = "$mainWindowPath.$($profile.profileId)-swap-$PID.tmp"
+try {
+    [System.IO.File]::Replace($candidatePath, $mainWindowPath, $swapPath)
+    if ([System.IO.File]::Exists($swapPath)) { Remove-Item -LiteralPath $swapPath -Force }
+    $installedHash = (Get-FileHash -LiteralPath $mainWindowPath -Algorithm SHA256).Hash.ToUpperInvariant()
+    if ($installedHash -ne $profile.patchedSha256.ToUpperInvariant()) {
+        throw "Installed file verification failed. SHA256=$installedHash"
+    }
+} catch {
+    if ([System.IO.File]::Exists($candidatePath)) { Remove-Item -LiteralPath $candidatePath -Force }
+    if ([System.IO.File]::Exists($swapPath)) { Remove-Item -LiteralPath $swapPath -Force }
+    if ([System.IO.File]::Exists($backupPath)) { Copy-Item -LiteralPath $backupPath -Destination $mainWindowPath -Force }
+    throw
+}
+
+Write-Output "LM Studio $($profile.version) deep Chinese patch installed: $mainWindowPath"
+if ($upgradingFromLegacy) { Write-Output 'Upgrade path: legacy safe patch -> versioned deep patch' }
 Write-Output "Patched locale namespaces: $($patchedNamespaces -join ', ')"
-if ($upgradingFromSafeV2) {
-    Write-Output 'Upgrade path: safe v2 -> deep1.1'
-}
-Write-Output "Output: $destinationPath"
-Write-Output "SHA256=$patchedHash"
+Write-Output "SHA256=$installedHash"

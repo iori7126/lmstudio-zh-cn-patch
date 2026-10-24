@@ -1,0 +1,17 @@
+{
+  "version": "0.4.20+1",
+  "profileId": "0.4.20-1",
+  "platform": "win32-x64",
+  "mainWindowRelativePath": "resources\\app\\.webpack\\renderer\\main_window.js",
+  "originalSha256": "5BEC77399EBD6C5C1B5426F506949C6D3202AAE0F9545B4E0BCCAB56EC7C788B",
+  "patchedSha256": "A47D4DABEFA207A5699223B9A0BADF2CF9A29664154D8153EB6387BDEA285867",
+  "backupSuffix": ".zh-cn-deep-0.4.20-1.bak",
+  "legacyCurrentSha256": "D391E601C5E7C5E5C83E8C0D1C90311BC213CFEE0594E9C54C3A9F161A9E0FBA",
+  "legacyBackupSuffix": ".zh-cn-enhanced-0.4.20-1.bak",
+  "legacyOriginalSha256": "5BEC77399EBD6C5C1B5426F506949C6D3202AAE0F9545B4E0BCCAB56EC7C788B",
+  "baselineRoot": "baseline\\zh-CN",
+  "payloadRoot": "payload\\zh-CN",
+  "overlayPath": "deep\\deep-overlay.js",
+  "overlayVersion": "0.4.20-1-deep-1",
+  "sourceMapPath": "source\\deep-ui-zh-CN.json"
+}
