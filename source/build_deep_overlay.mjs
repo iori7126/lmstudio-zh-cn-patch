@@ -6,9 +6,10 @@ const mapPath = process.argv[2];
 const outputPath = process.argv[3];
 const baseBundlePath = process.argv[4];
 const deepBundlePath = process.argv[5];
+const overlayVersion = process.argv[6] ?? "0.4.20-1-deep-1";
 if (!mapPath || !outputPath) {
   throw new Error(
-    "Usage: node build_deep_overlay.mjs <map.json> <overlay.js> [base-bundle.js deep-bundle.js]",
+    "Usage: node build_deep_overlay.mjs <map.json> <overlay.js> [base-bundle.js deep-bundle.js overlay-version]",
   );
 }
 if ((baseBundlePath && !deepBundlePath) || (!baseBundlePath && deepBundlePath)) {
@@ -20,6 +21,7 @@ const mapJson = JSON.stringify(translationMap);
 const source = String.raw`
 ;(() => {
   const translations = new Map(Object.entries(${mapJson}));
+  const patchVersion = ${JSON.stringify(overlayVersion)};
   const excluded = "script,style,noscript,code,pre,textarea,[contenteditable='true']";
   const attrs = ["aria-label", "title", "placeholder"];
   const normalize = (value) => value.replace(/\s+/g, " ").trim();
@@ -32,6 +34,13 @@ const source = String.raw`
     if ((match = value.match(/^Download(\d+(?:\.\d+)?\s+(?:GB|MB))$/))) return "下载 " + match[1];
     if ((match = value.match(/^Update(\d+(?:\.\d+)?\s+(?:GB|MB))$/))) return "更新 " + match[1];
     if ((match = value.match(/^(\d+(?:\.\d+)*) - Release notes$/))) return match[1] + " - 发行说明";
+    if (patchVersion === "0.4.26-4-deep-1") {
+      if ((match = value.match(/^(\d+) GPU detected with CUDA$/))) return "检测到 " + match[1] + " 个使用 CUDA 的 GPU";
+      if ((match = value.match(/^Nvidia CUDA (.+) accelerated llama\.cpp engine$/))) return "使用 Nvidia CUDA " + match[1] + " 加速的 llama.cpp 引擎";
+      if ((match = value.match(/^(\d+) models$/))) return match[1] + " 个模型";
+      if (value === "VRAM Capacity:") return "显存容量：";
+      if (value === "deviceId:") return "设备 ID：";
+    }
     return null;
   };
   const translate = (value) => {
@@ -110,7 +119,7 @@ const source = String.raw`
       attributeFilter: attrs,
     });
     Object.defineProperty(window, "__LMSTUDIO_ZH_DEEP_PATCH__", {
-      value: Object.freeze({ version: "0.4.20-1-deep-1", entries: translations.size }),
+      value: Object.freeze({ version: ${JSON.stringify(overlayVersion)}, entries: translations.size }),
       enumerable: false,
       configurable: false,
       writable: false,
@@ -134,4 +143,5 @@ console.log(JSON.stringify({
   bytes: fs.statSync(outputPath).size,
   outputPath: path.resolve(outputPath),
   deepBundlePath: deepBundlePath ? path.resolve(deepBundlePath) : null,
+  overlayVersion,
 }, null, 2));
